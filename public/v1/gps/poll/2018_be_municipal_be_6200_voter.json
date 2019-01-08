@@ -1,0 +1,9 @@
+{
+  "key": "2018_be_municipal_be_6200_voter",
+  "survey_key": "2018_be_municipal_wallonia_urban",
+  "segment_keys": [
+    "2018_be_municipal_be_6200_candidate",
+    "2018_be_municipal_be_6200_electoral_list"
+  ],
+  "insufficient_data": false
+}

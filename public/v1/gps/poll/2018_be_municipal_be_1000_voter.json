@@ -1,0 +1,9 @@
+{
+  "key": "2018_be_municipal_be_1000_voter",
+  "survey_key": "2018_be_municipal_brussels_urban",
+  "segment_keys": [
+    "2018_be_municipal_be_1000_candidate",
+    "2018_be_municipal_be_1000_electoral_list"
+  ],
+  "insufficient_data": false
+}
