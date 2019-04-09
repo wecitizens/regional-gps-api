@@ -1,5 +1,6 @@
 var express = require('express');
 var router = express.Router();
+var mysql = require('mysql');
 var db = require('../db');
 var fs = require('fs');
 
@@ -320,14 +321,33 @@ router.get('/v1/vote/district.json', function (req, res) {
 
 router.all('/v1/stats', function (req, res) {
 
-  console.log('req', req);
+  var db = mysql.createConnection({
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database : "stats"
+  });
 
-  let json = JSON.stringify(req.params);
+  db.connect((err) => {
+    if (err) throw err;
 
-  fs.writeFile('./public/stats/'+Date.now() + '.json', json, 'utf8');
+    let params = [
+      req.query.age,
+      req.query.source,
+      req.query.party_vote,
+    ];
 
-  res.json({
-    'data': ['ok']
+    console.log("Params", params, req);
+
+    db.query("INSERT INTO stats (age,source,party_vote) VALUES (?,?,?)", params , (err, rows) => {
+
+      if (err) throw err;
+
+      console.log("Err", err, rows);
+      res.json({
+        'data': ['ok']
+      });
+    });
   });
 });
 
