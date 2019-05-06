@@ -165,6 +165,9 @@ WHERE
   }
 });
 
+/**
+ * Get district segment
+ */
 router.get('/v1/vote/election/2019_be_regional/district/be_:key.json', function (req, res) {
 
   let key = req.params['key'];
