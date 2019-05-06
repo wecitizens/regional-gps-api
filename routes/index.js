@@ -4,38 +4,75 @@ var mysql = require('mysql');
 var db = require('../db');
 var fs = require('fs');
 
-router.get('/v1/dir/politician/:key.json', function (req, res) {
+/**
+ * Get 2019 elections questions
+ *
+ * @todo => output the elections questions like in http://demo-api.wecitizens.be/v1/gps/survey/2018_be_municipal_brussels_urban.json format
+ */
+router.get('/v1/gps/survey/:key.json', function (req, res) {
 
-  var key = req.params['key'];
+    const key = req.params['key'];
 
-  key = key.replace('politician_be_', '');
-  key = key.replace('be_politician_', '');
+    db.query("SELECT * from election WHERE Date = ?", key, function (err, elections) {
 
-  db.query("SELECT * from politician WHERE id = ?", key, function (err, rows) {
-    if (err) throw err;
+        if (err) throw err;
 
-    let item = rows[0];
+        let ids = [];
 
-    // Generate thumb
-    item.thumb = "http://directory.wecitizens.be/assets/media/politician-thumb/" + item.id + ".jpg";
+        ids = elections.map(function(election){
+            return election.id;
+        });
 
-    res.json(item);
-  });
+        console.log('Elections ids', ids);
+
+        // Continue...
+
+        res.json(ids);
+    });
 });
 
-router.get('/v1/gps/answer/segment/2018_be_municipal_be_:key.json', function (req, res) {
+/**
+ * Get polititican data
+ *
+ * @tag municipal, regional
+ */
+router.get('/v1/dir/politician/:key.json', function (req, res) {
 
-  let key = req.params['key'];
+    var key = req.params['key'];
 
-  if (key.includes('_electoral_list')) {
+    key = key.replace('politician_be_', '');
+    key = key.replace('be_politician_', '');
 
-    key = key.replace('_electoral_list', '');
-    const district = 'BE' + key;
+    db.query("SELECT * from politician WHERE id = ?", key, function (err, rows) {
+        if (err) throw err;
 
-    let electoralListQuery = `
+        let item = rows[0];
+
+        // Generate thumb
+        item.thumb = "http://directory.wecitizens.be/assets/media/politician-thumb/" + item.id + ".jpg";
+
+        res.json(item);
+    });
+});
+
+/**
+ * Get election segment
+ *
+ * @tag municipal
+ */
+router.get('/v1/gps/answer/segment/2019_be_regional_be_:key.json', function (req, res) {
+
+    let key = req.params['key'];
+
+    if (key.includes('_electoral_list')) {
+
+        key = key.replace('_electoral_list', '');
+        const district = 'BE' + key;
+
+        let electoralListQuery = `
 SELECT DISTINCT
     a.id,
-    CONCAT('2018_be_municipal_be_', '` + key + `') AS segment_key,
+    CONCAT('2019_be_regional_be_', '` + key + `') AS segment_key,
     'electoral_list' AS segment_type,
     CONCAT('be_', replace(e.district,'BE',''), '_', lower(replace(replace(party.abbr,'! &',''),' ','_'))) AS user_key,
     CONCAT('question_', a.opinion_id) AS question_key,
@@ -63,29 +100,28 @@ FROM
     localite_menu ON localite_menu.id_gps = election.id_gps
 WHERE
     e.district = ?
-    AND e.id_election >= 16  
+    AND e.id_election IN ('21', '22', '23', '24', '25')  
     AND a.id_politician != 5439
-    AND a.opinion_id in ('4','14','20','21','22','23','31','38','46','49','52','58','84','88','89','90','93','95','96','97','98','99','100','101','102','103','104','105','106','107','108','110','112','113','114','115','116','117','118','119','120','121','123','124','125')
     AND a.opinion_answer in ('1','2','3','4','5')
     AND party.abbr <> 'Other party'    
     AND p.personal_gender in ('i')
 ORDER BY opinion_received DESC
   `;
-    console.log(electoralListQuery);
+        console.log(electoralListQuery);
 
-    db.query(electoralListQuery, district, function (err, rows) {
-      if (err) throw err;
-      res.json({data: rows});
-    });
+        db.query(electoralListQuery, district, function (err, rows) {
+            if (err) throw err;
+            res.json({data: rows});
+        });
 
-  } else {
-    key = key.replace('_candidate', '');
-    const district = 'BE' + key;
+    } else {
+        key = key.replace('_candidate', '');
+        const district = 'BE' + key;
 
-    let candidateQuery = `
+        let candidateQuery = `
 SELECT DISTINCT
     a.id,
-    CONCAT('2018_be_municipal_be_', '` + key + `') AS segment_key,
+    CONCAT('2019_be_regional_be_', '` + key + `') AS segment_key,
     'candidate' AS segment_type,
     CONCAT('be_politician_',a.id_politician) AS user_key,
     CONCAT('question_', a.opinion_id) AS question_key,
@@ -109,29 +145,27 @@ FROM
     localite_menu ON localite_menu.id_gps = election.id_gps  
 WHERE
     a.id_politician != 5439 # Jean-Paul
-    AND e.id_election >= 16
-    AND e.district = ?
+    AND e.id_election IN ('21', '22', '23', '24', '25')
     AND a.opinion_answer in ('1','2','3','4','5')
-    AND a.opinion_id in ('4','14','20','21','22','23','31','38','46','49','52','58','84','88','89','90','93','95','96','97','98','99','100','101','102','103','104','105','106','107','108','110','112','113','114','115','116','117','118','119','120','121','123','124','125')
     AND p.personal_gender in ('m','f')
     ORDER BY opinion_received DESC
   `;
-    console.log(candidateQuery);
+        console.log(candidateQuery);
 
-    db.query(candidateQuery, district, function (err, rows) {
-      if (err) throw err;
+        db.query(candidateQuery, district, function (err, rows) {
+            if (err) throw err;
 
-      res.json({data: rows});
-    });
-  }
+            res.json({data: rows});
+        });
+    }
 });
 
-router.get('/v1/vote/election/2018_be_municipal/district/be_:key.json', function (req, res) {
+router.get('/v1/vote/election/2019_be_regional/district/be_:key.json', function (req, res) {
 
-  let key = req.params['key'];
-  const district = 'BE' + key;
+    let key = req.params['key'];
+    const district = 'BE' + key;
 
-  db.query(`SELECT 
+    db.query(`SELECT 
     MAX(segment_key) as segment_key,
     MAX(segment_type) as segment_type,
     MAX(list_key) as list_key,
@@ -189,14 +223,13 @@ FROM
     INNER JOIN localite_menu ON localite_menu.id_gps = election.id_gps
     WHERE
         a.id_politician != 5439
-            AND e.id_election >= 16
+            AND e.id_election IN ('21', '22', '23', '24', '25')
             AND e.district = ?
             AND a.opinion_answer IN ('1' , '2', '3', '4', '5')
-            AND a.opinion_id IN ('4' , '14', '20', '21', '22', '23', '31', '38', '46', '49', '52', '58', '84', '88', '89', '90', '93', '95', '96', '97', '98', '99', '100', '101', '102', '103', '104', '105', '106', '107', '108', '110', '112', '113', '114', '115', '116', '117', '118', '119', '120', '121', '123', '124', '125')
             AND p.personal_gender IN ('m' , 'f', 'i')
     ORDER BY opinion_received DESC) segment
     GROUP BY segment_key , segment_type , list_key , politician_key , id_politician , full_name , img , party , position , status , has_answered , id_election , completeness , total_questions UNION SELECT 
-        CONCAT('2018_be_municipal_be_', REPLACE(localite_menu.postcodes_principal, '.000', '')) AS segment_key,
+        CONCAT('2019_be_regional_be_', REPLACE(localite_menu.postcodes_principal, '.000', '')) AS segment_key,
             (CASE
                 WHEN p.personal_gender = 'm' THEN 'candidate'
                 WHEN p.personal_gender = 'f' THEN 'candidate'
@@ -226,136 +259,193 @@ FROM
     LEFT JOIN localite_menu ON localite_menu.id_gps = election.id_gps
     WHERE
         e.district = ?
-            AND e.id_election >= 16
+            AND e.id_election IN ('21', '22', '23', '24', '25')
     GROUP BY e.id_politician) all_together
 GROUP BY id_politician
-ORDER BY id_politician DESC`, [district,district], (err, rows) => {
+ORDER BY id_politician DESC`, [district, district], (err, rows) => {
 
-    /**
-     * @TODO => activate e.questionnaire = 1 when candidates answers to everything
-     */
+        /**
+         * @TODO => activate e.questionnaire = 1 when candidates answers to everything
+         */
 
-    if (err) {
-      throw  err;
-    }
+        if (err) {
+            throw  err;
+        }
+
+        let data = {
+            "key": "2019_be_regional_" + key,
+            "type": "be_municipal",
+            "type_name": "election_type_be_municipal_name",
+            "date": "2018-10-14T00:00:00.000Z",
+            "main_election_key": "2019_be_regional",
+            "district_key": "be_municipal_" + key,
+            "electoral_lists": [],
+            "candidates": [],
+            "i18n": {
+                "en": {},
+                "nl": {},
+                "fr": {}
+            }
+        };
+
+        let lists = {};
+        let candidates = {};
+        let names = {};
+
+        rows.map((item) => {
+
+            let imgUrl = (url) => {
+                return url ? url.replace('/home/wecitizens/domains/wecitizens.be/public_html/directory/', 'http://directory.wecitizens.be/') : null
+            }
+
+            if (typeof lists[item.list_key] === 'undefined') {
+                lists[item.list_key] = {
+                    "key": item.list_key,
+                    "name": item.list_key + "_name",
+                    "id": item.politician_id,
+                    "img": imgUrl(item.img),
+                    "candidates": {}
+                };
+            }
+
+            names[item.list_key + '_name'] = item.party;
+
+            lists[item.list_key].candidates[item.politician_key] = {
+                "order": item.position,
+                "key": item.politician_key,
+                "status": item.status
+            };
+
+            candidates[item.politician_key] = {
+                key: item.politician_key,
+                politician_id: item.politician_id,
+                full_name: item.full_name,
+                img: imgUrl(item.img),
+                order: item.position,
+                status: item.status,
+                has_answered: item.has_answered,
+                completeness: item.completeness,
+                list: item.party,
+                total_questions: item.total_questions,
+                total_received: item.total_received
+            };
+        });
+
+        data.electoral_lists = Object.values(lists);
+
+        data.electoral_lists.map((item) => {
+            return item.candidates = Object.values(item.candidates);
+        });
+
+        data.candidates = Object.values(candidates);
+
+        data.i18n.en = names;
+        data.i18n.nl = names;
+        data.i18n.fr = names;
+
+        res.json(data);
+    });
+});
+
+/**
+ * Get electoral disctrics (for regionnal)
+ *
+ * @tag regional
+ */
+router.get("/v1/vote/electoral-districts.json", function (req, res) {
+
+    let key = req.params['key'];
+    const district = 'BE' + key;
 
     let data = {
-      "key": "2018_be_municipal_" + key,
-      "type": "be_municipal",
-      "type_name": "election_type_be_municipal_name",
-      "date": "2018-10-14T00:00:00.000Z",
-      "main_election_key": "2018_be_municipal",
-      "district_key": "be_municipal_" + key,
-      "electoral_lists": [],
-      "candidates": [],
-      "i18n": {
-        "en": {},
-        "nl": {},
-        "fr": {}
-      }
+        "data":
+            [],
+        "i18n":
+            {
+                "en":
+                    {}
+                ,
+                "fr":
+                    {}
+                ,
+                "nl":
+                    {}
+            }
     };
 
-    let lists = {};
-    let candidates = {};
-    let names = {};
+    /**
+     * Return format
+     *
+     * data {
+     *
+     * }
+     */
+    db.query(`SELECT * FROM electoral_districts`, [], (err, rows) => {
 
-    rows.map((item) => {
+        if (err) throw err
 
-      let imgUrl = (url) => {
-        return url ? url.replace('/home/wecitizens/domains/wecitizens.be/public_html/directory/', 'http://directory.wecitizens.be/') : null
-      }
+        rows.map((item) => {
 
-      if (typeof lists[item.list_key] === 'undefined') {
-        lists[item.list_key] = {
-          "key": item.list_key,
-          "name": item.list_key + "_name",
-          "id": item.politician_id,
-          "img": imgUrl(item.img),
-          "candidates": {}
-        };
-      }
+            const name = "district_be_" + item.Elected_authority + "_" + item.id + "_name";
 
-      names[item.list_key + '_name'] = item.party;
+            const tmp = {
+                "code": item.id,
+                "key": "be_" + item.id,
+                "name": name,
+                "type": item.Elected_authority
+            };
 
-      lists[item.list_key].candidates[item.politician_key] = {
-        "order": item.position,
-        "key": item.politician_key,
-        "status": item.status
-      };
+            data.data.push(tmp);
+            data.i18n.en[name] = item.en;
+            data.i18n.fr[name] = item.fr;
+            data.i18n.nl[name] = item.nl;
+        });
 
-      candidates[item.politician_key] = {
-        key: item.politician_key,
-        politician_id: item.politician_id,
-        full_name: item.full_name,
-        img: imgUrl(item.img),
-        order: item.position,
-        status: item.status,
-        has_answered: item.has_answered,
-        completeness: item.completeness,
-        list: item.party,
-        total_questions: item.total_questions,
-        total_received: item.total_received
-      };
+        return res.json(data);
     });
-
-    data.electoral_lists = Object.values(lists);
-
-    data.electoral_lists.map((item) => {
-      return item.candidates = Object.values(item.candidates);
-    });
-
-    data.candidates = Object.values(candidates);
-
-    data.i18n.en = names;
-    data.i18n.nl = names;
-    data.i18n.fr = names;
-
-    res.json(data);
-  });
 });
 
-router.get('/v1/vote/district.json', function (req, res) {
-  //let key = req.params['key'];
-  res.json({});
-});
-
+/**
+ * Stats push stats into stats DB (/!\ different from POLDIR DB)
+ *
+ *
+ * @tag municipal, regional
+ */
 router.all('/v1/stats', function (req, res) {
 
-  var db = mysql.createConnection({
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database : "stats"
-  });
-
-  db.connect((err) => {
-    if (err) throw err;
-
-    let params = [
-      req.query.age,
-      req.query.source,
-      req.query.party_vote,
-    ];
-
-    console.log("Params", params, req);
-
-    db.query("INSERT INTO stats (age,source,party_vote) VALUES (?,?,?)", params , (err, rows) => {
-
-      if (err) throw err;
-
-      console.log("Err", err, rows);
-      res.json({
-        'data': ['ok']
-      });
+    var db = mysql.createConnection({
+        host: process.env.DB_HOST,
+        user: process.env.DB_USER,
+        password: process.env.DB_PASSWORD,
+        database: "stats"
     });
-  });
+
+    db.connect((err) => {
+        if (err) throw err;
+
+        let params = [
+            req.query.age,
+            req.query.source,
+            req.query.party_vote,
+        ];
+
+        db.query("INSERT INTO stats (age,source,party_vote) VALUES (?,?,?)", params, (err, rows) => {
+
+            if (err) throw err;
+
+            console.log("Err", err, rows);
+            res.json({
+                'data': ['ok']
+            });
+        });
+    });
 });
 
 /**
  * Just to check if the server response to a ping :-)
  */
 router.get('/ping', function (req, res) {
-  res.send('pong');
+    res.send('pong');
 });
 
 module.exports = router;
