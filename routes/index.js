@@ -14,25 +14,48 @@ router.get('/v1/gps/survey/:key.json', function (req, res) {
   const key = req.params['key'];
   const regional_id = req.query.regional_id;
 
-  db.query("SELECT * from election WHERE Date = ?", key, function (err, elections) {
+  const date = "2019-05-26";
+
+  db.query("SELECT * from election WHERE Date = ?", date, function (err, elections) {
 
     if (err) throw err;
 
     let ids = [];
 
-    ids = elections.filter(function (election) {
-      if (election.elected_authority === "EUROP" || election.elected_authority === "BEFCH" || election.elected_authority == regional_id) {
-        return election.id;
-      } else {
-        return false;
-      }
+    let districts = key.split("_");
+
+    db.query("SELECT * from electoral_districts WHERE id in ('" + districts.join("','") + "')", null, function(err, electoral_districts){
+
+      if (err) throw err;
+
+      /**
+       * Choose the corect regionalElectedAuthority
+       */
+      const regionalDistrict = electoral_districts.find(function(district){
+        if (district.Elected_authority.match("BER")) {
+          return district;
+        } else {
+          return false;
+        }
+      });
+
+      ids = elections.filter(function (election) {
+
+        if (election.elected_authority === "EUROP" || election.elected_authority === "BEFCH" || election.elected_authority === regionalDistrict.Elected_authority) {
+          return election.id;
+        } else {
+          console.log(election.elected_authority, regionalDistrict.Elected_authority);
+          return false;
+        }
+      });
+
+      console.log('Elections ids', ids);
+
+      // Continue...
+
+      res.json(ids);
+
     });
-
-    console.log('Elections ids', ids);
-
-    // Continue...
-
-    res.json(ids);
   });
 });
 
@@ -393,6 +416,7 @@ router.get("/v1/vote/electoral-districts.json", function (req, res) {
       const name = "district_be_" + item.Elected_authority + "_" + item.id + "_name";
 
       const tmp = {
+        "id": item.id,
         "code": item.id,
         "key": "be_" + item.id,
         "name": name,
