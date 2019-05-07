@@ -259,6 +259,8 @@ WHERE
   }
 });
 
+
+
 /**
  * Get district segment
  */
@@ -444,40 +446,35 @@ router.get('/v1/vote/election/2019_be_regional/district/be_:key.json', function 
   });
 });
 
+
 /**
- * Get electoral disctrics (for regionnal)
- *
+ * Get electoral districts (for regional)  , eg.:
+ *      /v1/vote/electoral-districts.json
+ *      /v1/vote/electoral-districts.json?reg=BERVL
+ *      /v1/vote/electoral-districts.json?reg=BERBR
+ *      /v1/vote/electoral-districts.json?reg=BERWA
+ *      /v1/vote/electoral-districts.json?reg=BER
  * @tag regional
  */
 router.get("/v1/vote/electoral-districts.json", function (req, res) {
 
-  let key = req.params['key'];
-  const district = 'BE' + key;
+  const regauthority = req.query.reg;  //console.log(regauthority);
 
+  // Return format data:
   let data = {
-    "data":
-      [],
-    "i18n":
-      {
-        "en":
-          {}
-        ,
-        "fr":
-          {}
-        ,
-        "nl":
-          {}
-      }
+    "data": [],
+    "i18n": { "en": {} , "fr": {} , "nl": {} }
   };
 
-  /**
-   * Return format
-   *
-   * data {
-   *
-   * }
-   */
-  db.query(`SELECT * FROM electoral_districts`, [], (err, rows) => {
+  let queryStr = `SELECT * FROM electoral_districts `;
+  if (regauthority) {
+    if (regauthority.len===5) queryStr += `WHERE Elected_Authority = '` +regauthority+ `'`;
+    else {
+      queryStr += `WHERE Elected_Authority LIKE '` +regauthority+ `%'`;
+    }
+  }
+
+  db.query(queryStr, [], (err, rows) => {
 
     if (err) throw err
 
