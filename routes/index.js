@@ -358,6 +358,7 @@ router.get('/v1/vote/election/2019_be_regional/district/be_:key.json', function 
 router.get("/v1/vote/electoral-districts.json", function (req, res) {
 
   let key = req.params['key'];
+
   const district = 'BE' + key;
 
   let data = {
