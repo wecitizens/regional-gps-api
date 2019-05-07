@@ -14,48 +14,119 @@ router.get('/v1/gps/survey/:key.json', function (req, res) {
   const key = req.params['key'];
   const regional_id = req.query.regional_id;
 
-  const date = "2019-05-26";
-
-  db.query("SELECT * from election WHERE Date = ?", date, function (err, elections) {
+  db.query("SELECT id, elected_authority, year, Date from election WHERE Date = ?", key, function (err, elections) {
 
     if (err) throw err;
 
-    let ids = [];
+    let survey = {
+      'key': "election_2019",
+      'name': "election_2019",
+      "i18n": {
+        "en": {},
+        "nl": {},
+        "fr": {}
+      }
+    }
 
-    let districts = key.split("_");
+    let electionIds = elections.filter(function (election) {
+      if (election.elected_authority === "EUROP" || election.elected_authority === "BEFCH" || election.elected_authority == regional_id) {
+        return election.id;
+      } else {
+        return false;
+      }
+    });
 
-    db.query("SELECT * from electoral_districts WHERE id in ('" + districts.join("','") + "')", null, function(err, electoral_districts){
+    survey.ids = electionIds;
 
+    // adding caxent libertas specific questionnaire - in the future a questionnaire table should replace this hack:
+    let questionnaires = [];
+    function extendElectionQuestionnaire(aElection, index) {
+      questionnaires.push(aElection.id);
+      if (aElection.id==21) questionnaires.push( 26,30);
+      else if (aElection.id==22) questionnaires.push( 27,31);
+      if (aElection.id==23) questionnaires.push( 28,32);
+      if (aElection.id==24) questionnaires.push( 33);
+      if (aElection.id==25) questionnaires.push( 29,24);
+    }
+    electionIds.forEach(extendElectionQuestionnaire);
+    survey.questionnaire = questionnaires;
+
+    let questionsQuery = "SELECT opinions.* FROM questions_election, opinions where id_election in (" + questionnaires.join(',') +
+      ") AND questions_election.opinion_id = opinions.id order by ordre";
+
+    let questionSummary = [], questions = [];
+    survey.question_order = [];
+
+
+    db.query( questionsQuery, null, function (err, electionQuestions) {
       if (err) throw err;
 
-      /**
-       * Choose the corect regionalElectedAuthority
-       */
-      const regionalDistrict = electoral_districts.find(function(district){
-        if (district.Elected_authority.match("BER")) {
-          return district;
-        } else {
-          return false;
+      let question_fr={};
+      let question_nl={};       let question_en={};
+
+      for (i = 0; i < electionQuestions.length; i++) {
+        let aQuestion = electionQuestions[i];
+        let questionId = 'question_' + aQuestion.id;
+        if (aQuestion.opinion_langue == 'nl') {
+          survey.question_order.push(questionId);
+          questionSummary.push({
+            "key": questionId,
+            "text": 'question.' + aQuestion.id + "_text",
+            "notice": 'question.' + aQuestion.id + "_notice",
+            "answer_format": "agr_5_scale_tol_3_scale_abs"
+          })
+          question_nl[aQuestion.id + "_text"] = aQuestion.opinion_question;
+          question_nl[aQuestion.id + "_notice"]=aQuestion.opinion_explanation;
+
         }
-      });
-
-      ids = elections.filter(function (election) {
-
-        if (election.elected_authority === "EUROP" || election.elected_authority === "BEFCH" || election.elected_authority === regionalDistrict.Elected_authority) {
-          return election.id;
-        } else {
-          console.log(election.elected_authority, regionalDistrict.Elected_authority);
-          return false;
+        if (aQuestion.opinion_langue == 'fr') {
+          question_fr[aQuestion.id + "_text"] = aQuestion.opinion_question;
+          question_fr[aQuestion.id + "_notice"]= aQuestion.opinion_explanation;
         }
-      });
+        if (aQuestion.opinion_langue == 'en') {
+          question_en[aQuestion.id + "_text"] = aQuestion.opinion_question;
+          question_en[aQuestion.id + "_notice"]= aQuestion.opinion_explanation;
+        }
+      }
+      survey.i18n.fr.question = question_fr;
+      survey.i18n.fr.answer_formats = {
+        "item": {
+          "yes": "Oui", "no": "Non", "strongly_agree": "Tout à fait d'accord", "agree": "Plutôt d'accord",
+          "no_opinion": "Je ne me prononce pas", "disagree": "Plutôt pas d'accord","strongly_disagree": "Pas du tout d'accord"
+        },
+        "tolerance": {
+          "item": {"very_important": "Très important", "important": "Important", "not_important": "Pas important" }
+        }
+      };
 
-      console.log('Elections ids', ids);
+      survey.i18n.nl.question = question_nl;
+      survey.i18n.nl.answer_formats =  {
+        "item": {
+          "yes": "Ja","no": "Nee","strongly_agree": "Helemaal akkoord",
+          "agree": "Eerder ja","no_opinion": "Ik spreek mij niet uit","disagree": "Eerder nee",
+          "strongly_disagree": "Helemaal niet akkoord"
+        },
+        "tolerance": {
+          "item": {"very_important": "Zeer belangrijk","important": "Belangrijk","not_important": "Niet belangrijk"}
+        }
+      };
 
-      // Continue...
+      survey.i18n.en.question = question_en;
+      survey.i18n.en.answer_formats = {
+        "item": {
+          "yes": "Yes","no": "No","strongly_agree": "Fully agree","agree": "Rather yes",
+          "no_opinion": "No opinion","disagree": "Rather no","strongly_disagree": "Strongly disagree"
+        },
+        "tolerance": {
+          "item": {"very_important": "Very important","important": "Important","not_important": "Not important"}
+        }
+      };
 
-      res.json(ids);
+      survey.answer_formats = JSON.parse(fs.readFileSync('public/v1/ref/answer_formats.json', 'utf8'));
 
-    });
+      res.json(survey);
+
+    })
   });
 });
 
@@ -187,6 +258,8 @@ WHERE
     });
   }
 });
+
+
 
 /**
  * Get district segment
@@ -373,41 +446,35 @@ router.get('/v1/vote/election/2019_be_regional/district/be_:key.json', function 
   });
 });
 
+
 /**
- * Get electoral disctrics (for regionnal)
- *
+ * Get electoral districts (for regional)  , eg.:
+ *      /v1/vote/electoral-districts.json
+ *      /v1/vote/electoral-districts.json?reg=BERVL
+ *      /v1/vote/electoral-districts.json?reg=BERBR
+ *      /v1/vote/electoral-districts.json?reg=BERWA
+ *      /v1/vote/electoral-districts.json?reg=BER
  * @tag regional
  */
 router.get("/v1/vote/electoral-districts.json", function (req, res) {
 
-  let key = req.params['key'];
+  const regauthority = req.query.reg;  //console.log(regauthority);
 
-  const district = 'BE' + key;
-
+  // Return format data:
   let data = {
-    "data":
-      [],
-    "i18n":
-      {
-        "en":
-          {}
-        ,
-        "fr":
-          {}
-        ,
-        "nl":
-          {}
-      }
+    "data": [],
+    "i18n": { "en": {} , "fr": {} , "nl": {} }
   };
 
-  /**
-   * Return format
-   *
-   * data {
-   *
-   * }
-   */
-  db.query(`SELECT * FROM electoral_districts`, [], (err, rows) => {
+  let queryStr = `SELECT * FROM electoral_districts `;
+  if (regauthority) {
+    if (regauthority.len===5) queryStr += `WHERE Elected_Authority = '` +regauthority+ `'`;
+    else {
+      queryStr += `WHERE Elected_Authority LIKE '` +regauthority+ `%'`;
+    }
+  }
+
+  db.query(queryStr, [], (err, rows) => {
 
     if (err) throw err
 
@@ -416,7 +483,6 @@ router.get("/v1/vote/electoral-districts.json", function (req, res) {
       const name = "district_be_" + item.Elected_authority + "_" + item.id + "_name";
 
       const tmp = {
-        "id": item.id,
         "code": item.id,
         "key": "be_" + item.id,
         "name": name,
