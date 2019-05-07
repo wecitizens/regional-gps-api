@@ -1,0 +1,66 @@
+[
+{
+"key": "dummy_yes_no",
+"items": [
+  {
+  "key": "yes",
+  "name": "answer_format.item.yes",
+  "weight": 100
+  },
+  {
+  "key": "no",
+  "name": "answer_format.item.no",
+  "weight": 0
+  }
+]
+},
+{
+"key": "agr_5_scale_tol_3_scale_abs",
+"items": [
+{
+"key": "strongly_agree",
+"name": "answer_format.item.strongly_agree",
+"weight": 100
+},
+{
+"key": "agree",
+"name": "answer_format.item.agree",
+"weight": 75
+},
+{
+"key": "no_opinion",
+"name": "answer_format.item.no_opinion",
+"weight": 50
+},
+{
+"key": "disagree",
+"name": "answer_format.item.disagree",
+"weight": 25
+},
+{
+"key": "strongly_disagree",
+"name": "answer_format.item.strongly_disagree",
+"weight": 0
+}
+],
+"tolerance": {
+"items": [
+{
+"key": "not_important",
+"name": "answer_format.tolerance.item.not_important",
+"weight": 0.4
+},
+{
+"key": "important",
+"name": "answer_format.tolerance.item.important",
+"weight": 1
+},
+{
+"key": "very_important",
+"name": "answer_format.tolerance.item.very_important",
+"weight": 2.5
+}
+]
+}
+}
+]
