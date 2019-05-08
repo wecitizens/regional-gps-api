@@ -1,0 +1,19 @@
+{
+  "id": "21,22,23,24,25",
+  "key": "2019_be_reg_fed_eur",
+  "type": "be_regional_federal_europe",
+  "type_name": "election_be_reg_fed_eur_name",
+  "date": "2019-05-26T00:00:00.000Z",
+  "district_type": "regional",
+  "i18n": {
+    "en": {
+      "election_be_reg_fed_eur_name": "regional federal european 2019 elections "
+    },
+    "fr": {
+      "election_be_reg_fed_eur_name": "élections régionale, fédérale et européenne de 2019 "
+    },
+    "nl": {
+      "election_be_reg_fed_eur_name": "2019 verkiezingen (federaal, gewestelijk, Europa)"
+    }
+  }
+}
