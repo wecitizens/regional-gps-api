@@ -64,6 +64,7 @@ router.get('/v1/gps/survey/:key.json', function (req, res) {
         let question_fr={};
         let question_nl={};       let question_en={};
 
+        //console.log(electionQuestions);
         for (i = 0; i < electionQuestions.length; i++) {
           let aQuestion = electionQuestions[i];
           let questionId = 'question_' + aQuestion.id;
@@ -88,6 +89,8 @@ router.get('/v1/gps/survey/:key.json', function (req, res) {
             question_en[aQuestion.id + "_notice"]= aQuestion.opinion_explanation;
           }
         }
+        survey.questions = questionSummary;
+
         survey.i18n.fr.question = question_fr;
         survey.i18n.fr.answer_formats = {
           "item": {
@@ -448,12 +451,12 @@ router.get('/v1/vote/election/2019_be_regional/district/be_:key.json', function 
 
 
 /**
- * Get electoral districts (for regional)  , eg.:
- *      /v1/vote/electoral-districts.json
+ * Get electoral districts (for given elected_authority)  , eg.:
+ *      /v1/vote/electoral-districts.json   -> all
  *      /v1/vote/electoral-districts.json?reg=BERVL
  *      /v1/vote/electoral-districts.json?reg=BERBR
  *      /v1/vote/electoral-districts.json?reg=BERWA
- *      /v1/vote/electoral-districts.json?reg=BER
+ *      /v1/vote/electoral-districts.json?reg=BER   -> like BER%
  * @tag regional
  */
 router.get("/v1/vote/electoral-districts.json", function (req, res) {
