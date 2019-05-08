@@ -19,12 +19,12 @@ router.get('/v1/gps/survey/:key.json', function (req, res) {
     if (err) throw err;
 
     let survey = {
-        'key': "election_2019",
-        'name': "election_2019",
-        "i18n": {
-          "en": {},
-          "nl": {},
-          "fr": {}
+      'key': "election_2019",
+      'name': "election_2019",
+      "i18n": {
+        "en": {},
+        "nl": {},
+        "fr": {}
       }
     }
 
@@ -102,32 +102,32 @@ router.get('/v1/gps/survey/:key.json', function (req, res) {
           }
         };
 
-        survey.i18n.nl.question = question_nl;
-        survey.i18n.nl.answer_formats =  {
-          "item": {
-            "yes": "Ja","no": "Nee","strongly_agree": "Helemaal akkoord",
-              "agree": "Eerder ja","no_opinion": "Ik spreek mij niet uit","disagree": "Eerder nee",
-              "strongly_disagree": "Helemaal niet akkoord"
-          },
-          "tolerance": {
-            "item": {"very_important": "Zeer belangrijk","important": "Belangrijk","not_important": "Niet belangrijk"}
-          }
-        };
+      survey.i18n.nl.question = question_nl;
+      survey.i18n.nl.answer_formats =  {
+        "item": {
+          "yes": "Ja","no": "Nee","strongly_agree": "Helemaal akkoord",
+          "agree": "Eerder ja","no_opinion": "Ik spreek mij niet uit","disagree": "Eerder nee",
+          "strongly_disagree": "Helemaal niet akkoord"
+        },
+        "tolerance": {
+          "item": {"very_important": "Zeer belangrijk","important": "Belangrijk","not_important": "Niet belangrijk"}
+        }
+      };
 
-        survey.i18n.en.question = question_en;
-        survey.i18n.en.answer_formats = {
-          "item": {
-            "yes": "Yes","no": "No","strongly_agree": "Fully agree","agree": "Rather yes",
-            "no_opinion": "No opinion","disagree": "Rather no","strongly_disagree": "Strongly disagree"
-            },
-            "tolerance": {
-              "item": {"very_important": "Very important","important": "Important","not_important": "Not important"}
-            }
-        };
+      survey.i18n.en.question = question_en;
+      survey.i18n.en.answer_formats = {
+        "item": {
+          "yes": "Yes","no": "No","strongly_agree": "Fully agree","agree": "Rather yes",
+          "no_opinion": "No opinion","disagree": "Rather no","strongly_disagree": "Strongly disagree"
+        },
+        "tolerance": {
+          "item": {"very_important": "Very important","important": "Important","not_important": "Not important"}
+        }
+      };
 
-        survey.answer_formats = JSON.parse(fs.readFileSync('public/v1/ref/answer_formats.json', 'utf8'));
+      survey.answer_formats = JSON.parse(fs.readFileSync('public/v1/ref/answer_formats.json', 'utf8'));
 
-        res.json(survey);
+      res.json(survey);
 
     })
   });
