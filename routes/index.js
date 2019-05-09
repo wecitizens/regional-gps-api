@@ -51,7 +51,7 @@ router.get('/v1/gps/survey/:key.json', function (req, res) {
     electionIds.forEach(extendElectionQuestionnaire);
     survey.questionnaire = questionnaires;
 
-    let questionsQuery = "SELECT opinions.* FROM questions_election, opinions where id_election in (" + questionnaires.join(',') +
+    let questionsQuery = "SELECT DISTINCT opinions.* FROM questions_election, opinions where id_election in (" + questionnaires.join(',') +
       ") AND questions_election.opinion_id = opinions.id order by ordre";
 
     let questionSummary = [], questions = [];
