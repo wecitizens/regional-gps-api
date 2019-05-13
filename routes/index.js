@@ -267,7 +267,9 @@ WHERE
 /**      **********************************************
  * Get politician (OR party) participating in given election with :key in (EUROP|BERVL|BERBR|BERWA|BEFCH)
  *   optional query args:  '?status=candidate' or '?status=substitute'  or '?status=party'
- *   without query args:  default to politician (NO party), any status
+ *        without 'status' query args:  default to politician (NO party), any status.
+ *
+ *   optional query args:  '?district=   '
  *
  *  typical query like:
  *    SELECT politician.id, politician.name, politician.surname, politician.personal_gender, politician.id_party,
@@ -284,6 +286,7 @@ router.get('/v1/vote/election/2019_be/candidates/be_:key.json', function (req, r
 
   let key = req.params['key'];
   const candidateStatus = req.query.status;   // ?status=candidate|substitute
+  const candidateDistrict = req.query.district;   // ?district= FL |  FH | ED | EF  | EN | ...
 
 
   // ok, let's do it quickly...
@@ -291,11 +294,15 @@ router.get('/v1/vote/election/2019_be/candidates/be_:key.json', function (req, r
   let electionId= elections[key.toUpperCase()];
 
   let politiciansQuery = 'SELECT politician.id, politician.name, politician.surname, politician.personal_gender, ' +
-      ' politician_election.place, politician_election.status, party.abbr ' +
+      ' politician_election.place, politician_election.district, politician_election.status, party.abbr ' +
      ' FROM politician_election, politician, party ' +
       ' WHERE party.id = politician_election.roll ' +
      ' AND politician.id = politician_election.id_politician ' +
      ' AND id_election ='+ electionId ;
+
+  if (candidateDistrict) {
+    politiciansQuery += ' AND politician_election.district ="'+ candidateDistrict+'"' ;
+  }
 
   if (candidateStatus=='party') {
     politiciansQuery += ' AND politician.personal_gender ="i" ';
