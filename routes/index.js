@@ -136,6 +136,7 @@ router.get('/v1/gps/survey/:key.json', function (req, res) {
 /**
  * Get polititican data
  *
+ *
  * @tag municipal, regional
  */
 router.get('/v1/dir/politician/:key.json', function (req, res) {
@@ -157,26 +158,29 @@ router.get('/v1/dir/politician/:key.json', function (req, res) {
   });
 });
 
-/**
+
+
+/** ***********************************
  * Get election segment
- *
+ *   key:    EN   |   EN_electoral_list  | EN_candidate | EN_substitute | VX_candidate
  * @tag municipal
  */
 router.get('/v1/gps/answer/segment/2019_be_regional_be_:key.json', function (req, res) {
 
   let key = req.params['key'];
 
-  if (key.includes('_electoral_list')) {
+  if (  key.includes('_electoral_list')  || key.includes('_party')  ) {
 
     key = key.replace('_electoral_list', '');
-    const district = 'BE' + key;
+    key = key.replace('_party', '');
+    const district = key;
 
     let electoralListQuery = `
 SELECT DISTINCT
     a.id,
-    CONCAT('2019_be_regional_be_', '` + key + `') AS segment_key,
+    CONCAT('2019_be_regional_be_', '` + district + `') AS segment_key,
     'electoral_list' AS segment_type,
-    CONCAT('be_', replace(e.district,'BE',''), '_', lower(replace(replace(party.abbr,'! &',''),' ','_'))) AS user_key,
+    CONCAT('be_', '` + district + `' , '_', lower(replace(replace(party.abbr,'! &',''),' ','_'))) AS user_key,
     CONCAT('question_', a.opinion_id) AS question_key,
     CASE
         WHEN a.opinion_answer = '1' THEN 'strongly_agree'
@@ -198,10 +202,8 @@ FROM
     party party ON party.id = e.roll
         JOIN
     election ON election.id = e.id_election  
-        LEFT JOIN
-    localite_menu ON localite_menu.id_gps = election.id_gps
 WHERE
-    e.district = ?
+    e.district LIKE '%` + district + `%'
     AND e.id_election IN ('21', '22', '23', '24', '25')  
     AND a.id_politician != 5439
     AND a.opinion_answer in ('1','2','3','4','5')
@@ -211,20 +213,28 @@ ORDER BY opinion_received DESC
   `;
     console.log(electoralListQuery);
 
-    db.query(electoralListQuery, district, function (err, rows) {
+    db.query(electoralListQuery, null, function (err, rows) {
       if (err) throw err;
       res.json({data: rows});
     });
 
   } else {
+
+    candidateStatus = 'candidate';
+    if (key.includes('_substitute')) {
+      candidateStatus = 'substitute'
+    }
+
     key = key.replace('_candidate', '');
-    const district = 'BE' + key;
+    key = key.replace('_substitute', '');
+
+    const district = key;
 
     let candidateQuery = `
 SELECT DISTINCT
     a.id,
     CONCAT('2019_be_regional_be_', '` + key + `') AS segment_key,
-    'candidate' AS segment_type,
+    '` + candidateStatus + `' AS segment_type,
     CONCAT('be_politician_',a.id_politician) AS user_key,
     CONCAT('question_', a.opinion_id) AS question_key,
     (CASE
@@ -243,15 +253,16 @@ FROM
     politician_election e ON e.id_politician = a.id_politician
         INNER JOIN
     election ON election.id = e.id_election  
-        INNER JOIN
-    localite_menu ON localite_menu.id_gps = election.id_gps  
 WHERE
-    a.id_politician != 5439 # Jean-Paul
+    e.district LIKE '%` + district + `%'
+    AND a.id_politician != 5439 
     AND e.id_election IN ('21', '22', '23', '24', '25')
     AND a.opinion_answer in ('1','2','3','4','5')
-    AND p.personal_gender in ('m','f')
-    ORDER BY opinion_received DESC
-  `;
+    AND p.personal_gender in ('m','f') `;
+
+    candidateQuery += ` AND e.status = '` + candidateStatus + `' ORDER BY opinion_received DESC `;
+
+    // Note 5439: id Jean-Paul Pinon
     console.log(candidateQuery);
 
     db.query(candidateQuery, district, function (err, rows) {
