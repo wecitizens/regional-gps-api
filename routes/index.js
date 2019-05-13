@@ -265,10 +265,11 @@ WHERE
 
 
 /**      **********************************************
- * Get politician (not party) participating in given election (EUROP|BERVL|BERBR|BERWA|BEFCH)
- *   optional query args:  '?status=candidate' or '?status=substitute'
+ * Get politician (OR party) participating in given election with :key in (EUROP|BERVL|BERBR|BERWA|BEFCH)
+ *   optional query args:  '?status=candidate' or '?status=substitute'  or '?status=party'
+ *   without query args:  default to politician (NO party), any status
  *
- *  query like:
+ *  typical query like:
  *    SELECT politician.id, politician.name, politician.surname, politician.personal_gender, politician.id_party,
       politician_election.roll, politician_election.place,
       party.abbr
@@ -292,12 +293,14 @@ router.get('/v1/vote/election/2019_be/candidates/be_:key.json', function (req, r
   let politiciansQuery = 'SELECT politician.id, politician.name, politician.surname, politician.personal_gender, ' +
       ' politician_election.place, politician_election.status, party.abbr ' +
      ' FROM politician_election, politician, party ' +
-     ' WHERE politician.personal_gender !="i" ' +
-     ' AND party.id = politician_election.roll ' +
+      ' WHERE party.id = politician_election.roll ' +
      ' AND politician.id = politician_election.id_politician ' +
      ' AND id_election ='+ electionId ;
 
-  if (candidateStatus) {
+  if (candidateStatus=='party') {
+    politiciansQuery += ' AND politician.personal_gender ="i" ';
+  } else if (candidateStatus) {
+    politiciansQuery += ' AND politician.personal_gender !="i" ';
     politiciansQuery += ' AND status ="'+ candidateStatus+'"' ;
   }
 
