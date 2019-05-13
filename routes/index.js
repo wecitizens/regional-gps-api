@@ -51,7 +51,7 @@ router.get('/v1/gps/survey/:key.json', function (req, res) {
     electionIds.forEach(extendElectionQuestionnaire);
     survey.questionnaire = questionnaires;
 
-    let questionsQuery = "SELECT opinions.* FROM questions_election, opinions where id_election in (" + questionnaires.join(',') +
+    let questionsQuery = "SELECT distinct opinions.* FROM questions_election, opinions where id_election in (" + questionnaires.join(',') +
       ") AND questions_election.opinion_id = opinions.id order by ordre";
 
     let questionSummary = [], questions = [];
@@ -65,7 +65,7 @@ router.get('/v1/gps/survey/:key.json', function (req, res) {
         let question_nl={};       let question_en={};
 
         //console.log(electionQuestions);
-        for (i = 0; i < electionQuestions.length; i++) {
+        for (let i = 0; i < electionQuestions.length; i++) {
           let aQuestion = electionQuestions[i];
           let questionId = 'question_' + aQuestion.id;
           if (aQuestion.opinion_langue == 'nl') {
@@ -264,7 +264,63 @@ WHERE
 
 
 
-/**
+/**      **********************************************
+ * Get politician (not party) participating in given election (EUROP|BERVL|BERBR|BERWA|BEFCH)
+ *   optional query args:  '?status=candidate' or '?status=substitute'
+ *
+ *  query like:
+ *    SELECT politician.id, politician.name, politician.surname, politician.personal_gender, politician.id_party,
+      politician_election.roll, politician_election.place,
+      party.abbr
+      FROM politician_election, politician, party
+      WHERE status = 'candidate'
+      AND politician.personal_gender !='i'
+      AND id_election = 25
+      AND politician.id = politician_election.id_politician
+      AND party.id = politician_election.roll
+ */
+router.get('/v1/vote/election/2019_be/candidates/be_:key.json', function (req, res) {
+
+  let key = req.params['key'];
+  const candidateStatus = req.query.status;   // ?status=candidate|substitute
+
+
+  // ok, let's do it quickly...
+  let elections = {EUROP:21, BEFCH:22, BERVL:23, BERWA:24, BERBR:25};
+  let electionId= elections[key.toUpperCase()];
+
+  let politiciansQuery = 'SELECT politician.id, politician.name, politician.surname, politician.personal_gender, ' +
+      ' politician_election.place, politician_election.status, party.abbr ' +
+     ' FROM politician_election, politician, party ' +
+     ' WHERE politician.personal_gender !="i" ' +
+     ' AND party.id = politician_election.roll ' +
+     ' AND politician.id = politician_election.id_politician ' +
+     ' AND id_election ='+ electionId ;
+
+  if (candidateStatus) {
+    politiciansQuery += ' AND status ="'+ candidateStatus+'"' ;
+  }
+
+  console.log(politiciansQuery);
+  let politiciansResponse = {}, candidates =[];
+
+  db.query( politiciansQuery, null, function (err, politiciansQueryRes) {
+    if (err) throw err;
+
+    for (let idx = 0; idx < politiciansQueryRes.length; idx++) {
+      let aCandidate = politiciansQueryRes[idx];
+      candidates.push(aCandidate);
+    }
+    politiciansResponse.candidates = candidates;
+
+    res.json(politiciansResponse);
+
+  })
+});
+
+
+
+/**   **********************************************
  * Get district segment
  */
 router.get('/v1/vote/election/2019_be_regional/district/be_:key.json', function (req, res) {
