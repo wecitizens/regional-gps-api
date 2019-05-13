@@ -1,0 +1,18 @@
+{
+  "id": "poll_19_be_fl",
+  "key": "2019_be_flanders",
+  "survey_key": "2019-26-05?",
+  "segment_keys": [
+
+    "2019_be_regional_flanders_candidate",
+    "2019_be_regional_flanders_candidate_substitute",
+    "2019_be_regional_flanders_party",
+    "2019_be_federal_flanders_candidate",
+    "2019_be_federal_flanders_candidate_substitute",
+    "2019_be_federal_flanders_party",
+    "2019_be_european_flanders_candidate",
+    "2019_be_european_flanders_candidate_substitute",
+    "2019_be_european_flanders_party"
+  ],
+  "insufficient_data": false
+}

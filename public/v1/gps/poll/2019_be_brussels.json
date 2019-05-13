@@ -1,0 +1,18 @@
+{
+  "id": "poll_19_be_br",
+  "key": "2019_be_brussels",
+  "survey_key": "2019-26-05?",
+  "segment_keys": [
+
+    "2019_be_regional_brussels_candidate",
+    "2019_be_regional_brussels_candidate_substitute",
+    "2019_be_regional_brussels_party",
+    "2019_be_federal_brussels_candidate",
+    "2019_be_federal_brussels_candidate_substitute",
+    "2019_be_federal_brussels_party",
+    "2019_be_european_brussels_candidate",
+    "2019_be_european_brussels_candidate_substitute",
+    "2019_be_european_brussels_party"
+  ],
+  "insufficient_data": false
+}

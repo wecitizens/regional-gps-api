@@ -1,0 +1,18 @@
+{
+  "id": "poll_19_be_wa",
+  "key": "2019_be_wallonia",
+  "survey_key": "2019-26-05?",
+  "segment_keys": [
+
+    "2019_be_regional_wallonia_candidate",
+    "2019_be_regional_wallonia_candidate_substitute",
+    "2019_be_regional_wallonia_party",
+    "2019_be_federal_wallonia_candidate",
+    "2019_be_federal_wallonia_candidate_substitute",
+    "2019_be_federal_wallonia_party",
+    "2019_be_european_wallonia_candidate",
+    "2019_be_european_wallonia_candidate_substitute",
+    "2019_be_european_wallonia_party"
+  ],
+  "insufficient_data": false
+}
