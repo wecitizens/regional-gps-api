@@ -165,7 +165,7 @@ router.get('/v1/dir/politician/:key.json', function (req, res) {
  *   key:    EN   |   EN_electoral_list  | EN_candidate | EN_substitute | VX_candidate
  * @tag municipal
  */
-router.get('/v1/gps/answer/segment/2019_be_regional_be_:key.json', function (req, res) {
+router.get('/v1/gps/answer/segment/2019_be_all_be_:key.json', function (req, res) {
 
   let key = req.params['key'];
 
@@ -401,7 +401,7 @@ router.get('/v1/vote/election/2019_be_regional/district/be_:key.json', function 
                                  INNER JOIN localite_menu ON localite_menu.id_gps = election.id_gps
                         WHERE a.id_politician != 5439
                           AND e.id_election IN ('21', '22', '23', '24', '25')
-                          AND e.district = ?
+                          AND e.district LIKE '%` + district + `%'
                           AND a.opinion_answer IN ('1', '2', '3', '4', '5')
                           AND p.personal_gender IN ('m', 'f', 'i')
                         ORDER BY opinion_received DESC) segment
@@ -416,7 +416,7 @@ router.get('/v1/vote/election/2019_be_regional/district/be_:key.json', function 
                               WHEN p.personal_gender = 'i' THEN 'electoral_list'
                               ELSE 'wrong'
                              END)                                                         AS segment_type,
-                         CONCAT('be_', REPLACE(e.district, 'BE', ''), '_',
+                         CONCAT('be_', ` + district + `, '_',
                                 LOWER(REPLACE(REPLACE(party.abbr, '! &', ''), ' ', '_'))) AS list_key,
                          CONCAT('be_politician_', p.id)                                   AS politician_key,
                          p.id                                                             AS politician_id,
@@ -437,11 +437,11 @@ router.get('/v1/vote/election/2019_be_regional/district/be_:key.json', function 
                            LEFT JOIN politician_photos pic ON pic.id_politician = e.id_politician
                            JOIN election ON election.id = e.id_election
                            LEFT JOIN localite_menu ON localite_menu.id_gps = election.id_gps
-                  WHERE e.district = ?
+                  WHERE e.district LIKE '%` + district + `%'
                     AND e.id_election IN ('21', '22', '23', '24', '25')
                   GROUP BY e.id_politician) all_together
             GROUP BY id_politician
-            ORDER BY id_politician DESC`, [district, district], (err, rows) => {
+            ORDER BY id_politician DESC`, [], (err, rows) => {
 
     /**
      * @TODO => activate e.questionnaire = 1 when candidates answers to everything
