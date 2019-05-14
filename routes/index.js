@@ -182,15 +182,53 @@ router.get('/v1/dir/politician/:key.json', function (req, res) {
  *   key:    EN   |   EN_electoral_list  | EN_candidate | EN_substitute | VX_candidate
  * @tag municipal
  */
-router.get('/v1/gps/answer/segment/2019_be_all_be_:key.json', function (req, res) {
+router.get('/v1/gps/answer/segment/2019_be:key.json', function (req, res) {
 
   let key = req.params['key'];
+  let electionTp = '';
+  let politicianTp = '';
+  let candidateStatus = 'candidate';
 
+  console.log(key);;
+  if (  key.includes('_reg')) {
+    electionTp = 'reg';
+    key = key.replace('_reg', '');
+  }
+  console.log(key);;
+  if (  key.includes('_eur')) {
+    electionTp = 'eur';
+    key = key.replace('_eur', '');
+  }
+  console.log(key);;
+  if (  key.includes('_fed')) {
+    electionTp = 'fed';
+    key = key.replace('_fed', '');
+  }
+  console.log(key);;
   if (  key.includes('_electoral_list')  || key.includes('_party')  ) {
-
+    politicianTp = 'party';
     key = key.replace('_electoral_list', '');
     key = key.replace('_party', '');
-    const district = key;
+  }
+  console.log(key);;
+  if (key.includes('_substitute')) {
+    candidateStatus = 'substitute'
+    key = key.replace('_substitute', '');
+  }
+  console.log(key);
+  key = key.replace('_candidate', '');
+
+  key = key.replace('_', '');
+  const district = key;
+
+  console.log('electionTp:', electionTp);
+  console.log('district:', district );
+  console.log('politicianTp:', politicianTp);
+  console.log('candidateStatus:', candidateStatus);
+  console.log(key);
+
+  if ( politicianTp == 'party') {
+
 
     let electoralListQuery = `
 SELECT DISTINCT
@@ -237,20 +275,10 @@ ORDER BY opinion_received DESC
 
   } else {
 
-    candidateStatus = 'candidate';
-    if (key.includes('_substitute')) {
-      candidateStatus = 'substitute'
-    }
-
-    key = key.replace('_candidate', '');
-    key = key.replace('_substitute', '');
-
-    const district = key;
-
     let candidateQuery = `
 SELECT DISTINCT
     a.id,
-    CONCAT('2019_be_regional_be_', '` + key + `') AS segment_key,
+    CONCAT('2019_be_regional_be_', '` + district + `') AS segment_key,
     '` + candidateStatus + `' AS segment_type,
     CONCAT('be_politician_',a.id_politician) AS user_key,
     CONCAT('question_', a.opinion_id) AS question_key,
