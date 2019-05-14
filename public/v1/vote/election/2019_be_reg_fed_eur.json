@@ -4,7 +4,7 @@
   "type": "be_regional_federal_europe",
   "type_name": "election_be_reg_fed_eur_name",
   "date": "2019-05-26T00:00:00.000Z",
-  "district_type": "regional",
+  "district_type": "eur_fed_reg",
   "i18n": {
     "en": {
       "election_be_reg_fed_eur_name": "regional federal european 2019 elections "
