@@ -5,6 +5,23 @@ var db = require('../db');
 var fs = require('fs');
 
 /**
+      /v1/gps/survey/:key.json
+
+      /v1/dir/politician/:key.json
+
+      /v1/gps/answer/segment/2019_be_all_be_:key.json
+
+      /v1/vote/election/2019_be/candidates/be_:key.json
+
+      /v1/vote/election/2019_be/district/be_:key.json
+
+      /v1/vote/electoral-districts.json
+
+ */
+
+
+
+/**
  * Get 2019 elections questions
  *
  * @todo => output the elections questions like in http://demo-api.wecitizens.be/v1/gps/survey/2018_be_municipal_brussels_urban.json format
@@ -344,12 +361,13 @@ router.get('/v1/vote/election/2019_be/candidates/be_:key.json', function (req, r
 /**   **********************************************
  * Get district segment
  */
-router.get('/v1/vote/election/2019_be_regional/district/be_:key.json', function (req, res) {
+router.get('/v1/vote/election/2019_be/district/be_:key.json', function (req, res) {
 
   let key = req.params['key'];
-  const district = 'BE' + key;
+  const district = key;
 
-  db.query(`SELECT MAX(segment_key)     as segment_key,
+
+  let queryStr = `SELECT MAX(segment_key)     as segment_key,
                    MAX(segment_type)    as segment_type,
                    MAX(list_key)        as list_key,
                    MAX(politician_key)  as politician_key,
@@ -408,15 +426,14 @@ router.get('/v1/vote/election/2019_be_regional/district/be_:key.json', function 
                   GROUP BY segment_key, segment_type, list_key, politician_key, id_politician, full_name, img, party,
                            position, status, has_answered, id_election, completeness, total_questions
                   UNION
-                  SELECT CONCAT('2019_be_regional_be_',
-                                REPLACE(localite_menu.postcodes_principal, '.000', ''))   AS segment_key,
+                  SELECT CONCAT('2019_be_regional_be_','%\` + district + \`%' )   AS segment_key,
                          (CASE
-                              WHEN p.personal_gender = 'm' THEN 'candidate'
-                              WHEN p.personal_gender = 'f' THEN 'candidate'
                               WHEN p.personal_gender = 'i' THEN 'electoral_list'
+                              WHEN e.status= 'candidate' THEN 'candidate'
+                              WHEN e.status = 'substitute' THEN 'substitute'
                               ELSE 'wrong'
                              END)                                                         AS segment_type,
-                         CONCAT('be_', ` + district + `, '_',
+                         CONCAT('be_', '` + district + `', '_',
                                 LOWER(REPLACE(REPLACE(party.abbr, '! &', ''), ' ', '_'))) AS list_key,
                          CONCAT('be_politician_', p.id)                                   AS politician_key,
                          p.id                                                             AS politician_id,
@@ -436,12 +453,14 @@ router.get('/v1/vote/election/2019_be_regional/district/be_:key.json', function 
                            LEFT JOIN party party ON party.id = e.roll
                            LEFT JOIN politician_photos pic ON pic.id_politician = e.id_politician
                            JOIN election ON election.id = e.id_election
-                           LEFT JOIN localite_menu ON localite_menu.id_gps = election.id_gps
                   WHERE e.district LIKE '%` + district + `%'
                     AND e.id_election IN ('21', '22', '23', '24', '25')
                   GROUP BY e.id_politician) all_together
             GROUP BY id_politician
-            ORDER BY id_politician DESC`, [], (err, rows) => {
+            ORDER BY id_politician DESC`;
+
+    //console.log(queryStr);
+    db.query(queryStr, [], (err, rows) => {
 
     /**
      * @TODO => activate e.questionnaire = 1 when candidates answers to everything
@@ -452,12 +471,12 @@ router.get('/v1/vote/election/2019_be_regional/district/be_:key.json', function 
     }
 
     let data = {
-      "key": "2019_be_regional_" + key,
-      "type": "be_municipal",
-      "type_name": "election_type_be_municipal_name",
-      "date": "2018-10-14T00:00:00.000Z",
-      "main_election_key": "2019_be_regional",
-      "district_key": "be_municipal_" + key,
+      "key": "2019_be_eur_fed_reg_" + key,
+      "type": "be_eur_reg_fed",
+      "type_name": "be_eur_fed_reg",
+      "date": "2019-05-26T00:00:00.000Z",
+      "main_election_key": "2019_be_eur_fed_reg",
+      "district_key": "be_" + key,
       "electoral_lists": [],
       "candidates": [],
       "i18n": {
