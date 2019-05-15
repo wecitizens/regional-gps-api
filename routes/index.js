@@ -29,7 +29,7 @@ var fs = require('fs');
 router.get('/v1/gps/survey/:key.json', function (req, res) {
 
   const key = req.params['key'];
-  const regional_id = req.query.regional_id;
+  const regional_id = req.query.reg;
 
   db.query("SELECT id, elected_authority, year, Date from election WHERE Date = ?", key, function (err, elections) {
 
@@ -81,7 +81,7 @@ router.get('/v1/gps/survey/:key.json', function (req, res) {
         let question_fr={};
         let question_nl={};       let question_en={};
 
-        //console.log(electionQuestions);
+        console.log(electionQuestions);
         for (let i = 0; i < electionQuestions.length; i++) {
           let aQuestion = electionQuestions[i];
           let questionId = 'question_' + aQuestion.id;
@@ -149,6 +149,8 @@ router.get('/v1/gps/survey/:key.json', function (req, res) {
     })
   });
 });
+
+
 
 /**
  * Get polititican data
@@ -393,6 +395,7 @@ router.get('/v1/vote/election/2019_be/district/be_:key.json', function (req, res
 
   let key = req.params['key'];
   const district = key;
+  console.log('Get district segment for ',  key);
 
 
   let queryStr = `SELECT MAX(segment_key)     as segment_key,
@@ -487,7 +490,7 @@ router.get('/v1/vote/election/2019_be/district/be_:key.json', function (req, res
             GROUP BY id_politician
             ORDER BY id_politician DESC`;
 
-    //console.log(queryStr);
+    console.log(queryStr);
     db.query(queryStr, [], (err, rows) => {
 
     /**
@@ -516,6 +519,7 @@ router.get('/v1/vote/election/2019_be/district/be_:key.json', function (req, res
 
     let lists = {};
     let candidates = {};
+    let substitutes = {};
     let names = {};
 
     rows.map((item) => {
@@ -542,19 +546,37 @@ router.get('/v1/vote/election/2019_be/district/be_:key.json', function (req, res
         "status": item.status
       };
 
-      candidates[item.politician_key] = {
-        key: item.politician_key,
-        politician_id: item.politician_id,
-        full_name: item.full_name,
-        img: imgUrl(item.img),
-        order: item.position,
-        status: item.status,
-        has_answered: item.has_answered,
-        completeness: item.completeness,
-        list: item.party,
-        total_questions: item.total_questions,
-        total_received: item.total_received
-      };
+      if (item.status == 'substitute') {
+        substitutes[item.politician_key] = {
+          key: item.politician_key,
+          politician_id: item.politician_id,
+          full_name: item.full_name,
+          img: imgUrl(item.img),
+          order: item.position,
+          status: item.status,
+          has_answered: item.has_answered,
+          completeness: item.completeness,
+          list: item.party,
+          total_questions: item.total_questions,
+          total_received: item.total_received
+        };
+
+      } else {
+
+        candidates[item.politician_key] = {
+          key: item.politician_key,
+          politician_id: item.politician_id,
+          full_name: item.full_name,
+          img: imgUrl(item.img),
+          order: item.position,
+          status: item.status,
+          has_answered: item.has_answered,
+          completeness: item.completeness,
+          list: item.party,
+          total_questions: item.total_questions,
+          total_received: item.total_received
+        };
+      }
     });
 
     data.electoral_lists = Object.values(lists);
@@ -564,6 +586,7 @@ router.get('/v1/vote/election/2019_be/district/be_:key.json', function (req, res
     });
 
     data.candidates = Object.values(candidates);
+    data.substitutes = Object.values(substitutes);
 
     data.i18n.en = names;
     data.i18n.nl = names;
@@ -626,6 +649,8 @@ router.get("/v1/vote/electoral-districts.json", function (req, res) {
   });
 });
 
+
+
 /**
  * Stats push stats into stats DB (/!\ different from POLDIR DB)
  *
@@ -661,6 +686,8 @@ router.all('/v1/stats', function (req, res) {
     });
   });
 });
+
+
 
 /**
  * Just to check if the server response to a ping :-)
