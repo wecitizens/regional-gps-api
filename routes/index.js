@@ -669,20 +669,31 @@ router.all('/v1/stats', function (req, res) {
   db.connect((err) => {
     if (err) throw err;
 
+    let current_datetime = new Date()
+    let formatted_date = current_datetime.getFullYear() + "-" + (current_datetime.getMonth() + 1) + "-" + current_datetime.getDate() + " " + current_datetime.getHours() + ":" + current_datetime.getMinutes() + ":" + current_datetime.getSeconds();
+
     let params = [
       req.query.age,
       req.query.source,
       req.query.party_vote,
+      formatted_date
     ];
 
-    db.query("INSERT INTO stats (age,source,party_vote) VALUES (?,?,?)", params, (err, rows) => {
+
+    db.query("INSERT INTO stats (age,source,party_vote,created) VALUES (?,?,?,?)", params, (err, rows) => {
 
       if (err) throw err;
 
-      console.log("Err", err, rows);
+      let data = [
+        rows[0].id,
+        req.query.answers,
+        formatted_date
+      ];
 
-      res.json({
-        'data': ['ok']
+      db.query("INSERT INTO answers (stats_id, answers, created) VALUES (?,?,?)", data, (err, rows) => {
+        res.json({
+          'data': rows
+        });
       });
     });
   });
