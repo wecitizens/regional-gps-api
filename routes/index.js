@@ -680,6 +680,7 @@ router.all('/v1/stats', function (req, res) {
       if (err) throw err;
 
       console.log("Err", err, rows);
+
       res.json({
         'data': ['ok']
       });
@@ -688,6 +689,41 @@ router.all('/v1/stats', function (req, res) {
 });
 
 
+
+/**
+ * Stats push stats into stats DB (/!\ different from POLDIR DB)
+ *
+ *
+ * @todo JM PUT the correct answers format
+ * @tag municipal, regional
+ */
+router.get('/v1/answers/:key', function (req, res) {
+
+  var db = mysql.createConnection({
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: "stats"
+  });
+
+  db.connect((err) => {
+
+    if (err) throw err;
+
+    let key = req.params['key'];
+
+    db.query("SELECT * from answers where id = ?", key, (err, rows) => {
+
+      if (err) throw err;
+
+      let row = rows[0];
+
+      row.answers = JSON.parse(row.answers);
+
+      return res.json(row);
+    });
+  });
+});
 
 /**
  * Just to check if the server response to a ping :-)
