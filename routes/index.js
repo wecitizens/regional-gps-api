@@ -53,23 +53,33 @@ router.get('/v1/gps/survey/:key.json', function (req, res) {
       }
     });
 
+    //console.log('regional_id:' + regional_id);
+    //console.log('electionIds:' + electionIds);
     survey.ids = electionIds;
 
     // adding caxent libertas specific questionnaire - in the future a questionnaire table should replace this hack:
     let questionnaires = [];
+
+
     function extendElectionQuestionnaire(aElection, index) {
       questionnaires.push(aElection.id);
-      if (aElection.id==21) questionnaires.push( 26,30);
-      else if (aElection.id==22) questionnaires.push( 27,31);
-      if (aElection.id==23) questionnaires.push( 28,32);
-      if (aElection.id==24) questionnaires.push( 33);
-      if (aElection.id==25) questionnaires.push( 29,24);
+
+      // Commented  as this will be used only by a developer for a specific customer.
+      //if (aElection.id==21) questionnaires.push( 26,30);
+      //else if (aElection.id==22) questionnaires.push( 27,31);
+      //if (aElection.id==23) questionnaires.push( 28,32);
+      //if (aElection.id==24) questionnaires.push( 33);
+      //if (aElection.id==25) questionnaires.push( 29,24);
+
     }
     electionIds.forEach(extendElectionQuestionnaire);
     survey.questionnaire = questionnaires;
 
     let questionsQuery = "SELECT DISTINCT opinions.* FROM questions_election, opinions where id_election in (" + questionnaires.join(',') +
       ") AND questions_election.opinion_id = opinions.id order by ordre";
+
+
+    //console.log(questionsQuery);
 
     let questionSummary = [], questions = [];
     survey.question_order = [];
@@ -81,7 +91,7 @@ router.get('/v1/gps/survey/:key.json', function (req, res) {
         let question_fr={};
         let question_nl={};       let question_en={};
 
-        console.log(electionQuestions);
+        //console.log(electionQuestions);
         for (let i = 0; i < electionQuestions.length; i++) {
           let aQuestion = electionQuestions[i];
           let questionId = 'question_' + aQuestion.id;
@@ -191,33 +201,28 @@ router.get('/v1/gps/answer/segment/2019_be:key.json', function (req, res) {
   let politicianTp = '';
   let candidateStatus = 'candidate';
 
-  console.log(key);;
   if (  key.includes('_reg')) {
     electionTp = 'reg';
     key = key.replace('_reg', '');
   }
-  console.log(key);;
   if (  key.includes('_eur')) {
     electionTp = 'eur';
     key = key.replace('_eur', '');
   }
-  console.log(key);;
   if (  key.includes('_fed')) {
     electionTp = 'fed';
     key = key.replace('_fed', '');
   }
-  console.log(key);;
   if (  key.includes('_electoral_list')  || key.includes('_party')  ) {
     politicianTp = 'party';
     key = key.replace('_electoral_list', '');
     key = key.replace('_party', '');
   }
-  console.log(key);;
   if (key.includes('_substitute')) {
     candidateStatus = 'substitute'
     key = key.replace('_substitute', '');
   }
-  console.log(key);
+  //console.log(key);
   key = key.replace('_candidate', '');
 
   key = key.replace('_', '');
@@ -268,7 +273,7 @@ WHERE
     AND p.personal_gender in ('i')
 ORDER BY opinion_received DESC
   `;
-    console.log(electoralListQuery);
+    //console.log(electoralListQuery);
 
     db.query(electoralListQuery, null, function (err, rows) {
       if (err) throw err;
@@ -310,7 +315,7 @@ WHERE
     candidateQuery += ` AND e.status = '` + candidateStatus + `' ORDER BY opinion_received DESC `;
 
     // Note 5439: id Jean-Paul Pinon
-    console.log(candidateQuery);
+   // console.log(candidateQuery);
 
     db.query(candidateQuery, district, function (err, rows) {
       if (err) throw err;
@@ -369,7 +374,7 @@ router.get('/v1/vote/election/2019_be/candidates/be_:key.json', function (req, r
     politiciansQuery += ' AND status ="'+ candidateStatus+'"' ;
   }
 
-  console.log(politiciansQuery);
+ // console.log(politiciansQuery);
   let politiciansResponse = {}, candidates =[];
 
   db.query( politiciansQuery, null, function (err, politiciansQueryRes) {
@@ -395,7 +400,7 @@ router.get('/v1/vote/election/2019_be/district/be_:key.json', function (req, res
 
   let key = req.params['key'];
   const district = key;
-  console.log('Get district segment for ',  key);
+  //console.log('Get district segment for ',  key);
 
 
   let queryStr = `SELECT MAX(segment_key)     as segment_key,
@@ -490,7 +495,7 @@ router.get('/v1/vote/election/2019_be/district/be_:key.json', function (req, res
             GROUP BY id_politician
             ORDER BY id_politician DESC`;
 
-    console.log(queryStr);
+    //console.log(queryStr);
     db.query(queryStr, [], (err, rows) => {
 
     /**
@@ -660,12 +665,18 @@ router.get("/v1/vote/electoral-districts.json", function (req, res) {
  */
 router.all('/v1/stats', function (req, res) {
 
-  var db = mysql.createConnection({
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: "stats"
-  });
+
+   dbConfig = {
+     host: process.env.DB_HOST,
+     user: process.env.DB_USER,
+     password: process.env.DB_PASSWORD,
+     database: "stats"
+   }
+
+  //console.log(dbConfig);
+
+  var db = mysql.createConnection(dbConfig);
+
 
   db.connect((err) => {
     if (err) throw err;
@@ -680,7 +691,6 @@ router.all('/v1/stats', function (req, res) {
       formatted_date
     ];
 
-
     db.query("INSERT INTO stats (age,source,party_vote,created) VALUES (?,?,?,?)", params, (err, rows) => {
 
       if (err) throw err;
@@ -691,24 +701,29 @@ router.all('/v1/stats', function (req, res) {
         formatted_date
       ];
 
-      db.query("INSERT INTO answers (stats_id, answers, created) VALUES (?,?,?)", data, (err, rows) => {
-        res.json({
-          'data': rows
+        // for a specific usage
+        /*
+        db.query("INSERT INTO answers (stats_id, answers, created) VALUES (?,?,?)", data, (err, rows) => {
+          res.json({
+            'data': rows
+          });
         });
+        */
+
       });
     });
   });
-});
 
 
 
-/**
- * Stats push stats into stats DB (/!\ different from POLDIR DB)
- *
- *
- * @todo JM PUT the correct answers format
- * @tag municipal, regional
- */
+
+  /**
+   * Stats push stats into stats DB (/!\ different from POLDIR DB)
+   *
+   *
+   * @todo JM PUT the correct answers format
+   * @tag municipal, regional
+   */
 router.get('/v1/answers/:key', function (req, res) {
 
   var db = mysql.createConnection({
@@ -721,20 +736,17 @@ router.get('/v1/answers/:key', function (req, res) {
   db.connect((err) => {
 
     if (err) throw err;
-
     let key = req.params['key'];
 
     db.query("SELECT * from answers where id = ?", key, (err, rows) => {
-
       if (err) throw err;
-
       let row = rows[0];
-
       row.answers = JSON.parse(row.answers);
-
       return res.json(row);
     });
+
   });
+
 });
 
 /**
