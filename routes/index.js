@@ -695,11 +695,15 @@ router.all('/v1/stats', function (req, res) {
 
       if (err) throw err;
 
-      let data = [
+      res.json({
+        'data': rows
+      });
+
+      /*let data = [
         rows[0].id,
         req.query.answers,
         formatted_date
-      ];
+      ];*/
 
         // for a specific usage
         /*
