@@ -532,6 +532,7 @@ router.get('/v1/vote/election/2019_be/district/be_:key.json', function (req, res
         lists[item.list_key] = {
           "key": item.list_key,
           "name": item.list_key + "_name",
+          "full_name": item.party,
           "id": item.politician_id,
           "img": imgUrl(item.img),
           "candidates": {}
