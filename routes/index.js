@@ -799,11 +799,7 @@ router.get('/v1/answers/:key', function (req, res) {
  * Just to check if the server response to a ping :-)
  */
 router.get('/ping', function (req, res) {
-<<<<<<< HEAD
-  res.send('pong [v20190517.1]');
-=======
   res.send('1.1');
->>>>>>> 710e5d4c5db2bef9b4e68af10ee7a35902dcf9f4
 });
 
 module.exports = router;
