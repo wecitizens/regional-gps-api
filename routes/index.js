@@ -45,14 +45,23 @@ router.get('/v1/gps/survey/:key.json', function (req, res) {
       }
     }
 
+    let electQuestions = {};
     let electionIds = elections.filter(function (election) {
-      if (election.elected_authority === "EUROP" || election.elected_authority === "BEFCH" || election.elected_authority == regional_id) {
+      if (election.elected_authority === "EUROP" ) {
+        electQuestions['eur']= [];
+        return election.id;
+      } else if (election.elected_authority === "BEFCH" ) {
+        electQuestions['fed']= [];
+        return election.id;
+      } else if (election.elected_authority == regional_id) {
+        electQuestions['reg']= [];
         return election.id;
       } else {
         return false;
       }
     });
 
+    console.dir(electQuestions);
     //console.log('regional_id:' + regional_id);
     //console.log('electionIds:' + electionIds);
     survey.ids = electionIds;
@@ -62,6 +71,10 @@ router.get('/v1/gps/survey/:key.json', function (req, res) {
 
 
     function extendElectionQuestionnaire(aElection, index) {
+      let electionkey = 'election_' +  aElection.id;
+      console.dir(electionkey);
+      //electionQuestions.push( {'id' : aElection.id, 'questions' : [] } );
+
       questionnaires.push(aElection.id);
 
       // Commented  as this will be used only by a developer for a specific customer.
@@ -73,11 +86,18 @@ router.get('/v1/gps/survey/:key.json', function (req, res) {
 
     }
     electionIds.forEach(extendElectionQuestionnaire);
+
+    console.log(electQuestions['election_21']);
+    console.log(electQuestions['election_22']);
+
+
     survey.questionnaire = questionnaires;
 
-    let questionsQuery = "SELECT DISTINCT opinions.* FROM questions_election, opinions where id_election in (" + questionnaires.join(',') +
-      ") AND questions_election.opinion_id = opinions.id order by ordre";
+    let questionsQuery = "SELECT DISTINCT id_election, ordre, opinions.* FROM questions_election, opinions where id_election in (" + questionnaires.join(',') +
+        ") AND questions_election.opinion_id = opinions.id order by ordre, id_election";
 
+    //let questionsQuery = "SELECT DISTINCT opinions.* FROM questions_election, opinions where id_election in (" + questionnaires.join(',') +
+    //  ") AND questions_election.opinion_id = opinions.id order by ordre";
 
     //console.log(questionsQuery);
 
@@ -90,34 +110,61 @@ router.get('/v1/gps/survey/:key.json', function (req, res) {
 
         let question_fr={};
         let question_nl={};       let question_en={};
+        let currQuestion =0;
+        let currElection =0;
 
         //console.log(electionQuestions);
         for (let i = 0; i < electionQuestions.length; i++) {
-          let aQuestion = electionQuestions[i];
-          let questionId = 'question_' + aQuestion.id;
-          if (aQuestion.opinion_langue == 'nl') {
-            survey.question_order.push(questionId);
-            questionSummary.push({
-              "key": questionId,
-              "text": 'question.' + aQuestion.id + "_text",
-              "notice": 'question.' + aQuestion.id + "_notice",
-              "answer_format": "agr_5_scale_tol_3_scale_abs"
-            })
-            question_nl[aQuestion.id + "_text"] = aQuestion.opinion_question;
-            question_nl[aQuestion.id + "_notice"]=aQuestion.opinion_explanation;
+            let aQuestion = electionQuestions[i];
+            let questionKey = 'question_' + aQuestion.id;
+            let electionId = aQuestion.id_election;
+            let electionKey = 'election_' + electionId;
+            let electionTp ='';
+            if (electionId=21)  electionTp = 'eur';
+            if (electionId=22)  electionTp = 'fed';
+            if (electionId>22)  electionTp = 'reg';
 
-          }
-          if (aQuestion.opinion_langue == 'fr') {
-            question_fr[aQuestion.id + "_text"] = aQuestion.opinion_question;
-            question_fr[aQuestion.id + "_notice"]= aQuestion.opinion_explanation;
-          }
-          if (aQuestion.opinion_langue == 'en') {
-            question_en[aQuestion.id + "_text"] = aQuestion.opinion_question;
-            question_en[aQuestion.id + "_notice"]= aQuestion.opinion_explanation;
-          }
+            if (currQuestion !== aQuestion.id) {
+                console.log('new question' + aQuestion.id);
+                console.log('   election ' + electionId);
+                currQuestion = aQuestion.id;
+                currElection = electionId;
+              console.log(electionTp);
+                electQuestions[electionTp].push( aQuestion.id);
+
+                survey.question_order.push(questionKey);
+                questionSummary.push({
+                    "key": questionKey,
+                    "text": 'question.' + aQuestion.id + "_text",
+                    "notice": 'question.' + aQuestion.id + "_notice",
+                    "answer_format": "agr_5_scale_tol_3_scale_abs"
+                })
+
+            } else if (currElection !==electionId) {
+                console.log('   election ' + electionId);
+                currElection = electionId;
+                console.log(electionTp);
+                electQuestions[electionTp].push( questionKey);
+            }
+
+            console.log(     'lang:' + aQuestion.opinion_langue);
+            if (aQuestion.opinion_langue == 'nl') {
+                question_nl[aQuestion.id + "_text"] = aQuestion.opinion_question;
+                question_nl[aQuestion.id + "_notice"]=aQuestion.opinion_explanation;
+            }
+            if (aQuestion.opinion_langue == 'fr') {
+                question_fr[aQuestion.id + "_text"] = aQuestion.opinion_question;
+                question_fr[aQuestion.id + "_notice"]= aQuestion.opinion_explanation;
+            }
+            if (aQuestion.opinion_langue == 'en') {
+                question_en[aQuestion.id + "_text"] = aQuestion.opinion_question;
+                question_en[aQuestion.id + "_notice"]= aQuestion.opinion_explanation;
+            }
+
         }
-        survey.questions = questionSummary;
 
+        survey.electionsquestions = electQuestions;
+        survey.questions = questionSummary;
         survey.i18n.fr.question = question_fr;
         survey.i18n.fr.answer_formats = {
           "item": {
@@ -129,34 +176,34 @@ router.get('/v1/gps/survey/:key.json', function (req, res) {
           }
         };
 
-      survey.i18n.nl.question = question_nl;
-      survey.i18n.nl.answer_formats =  {
-        "item": {
-          "yes": "Ja","no": "Nee","strongly_agree": "Helemaal akkoord",
-          "agree": "Eerder ja","no_opinion": "Ik spreek mij niet uit","disagree": "Eerder nee",
-          "strongly_disagree": "Helemaal niet akkoord"
-        },
-        "tolerance": {
-          "item": {"very_important": "Zeer belangrijk","important": "Belangrijk","not_important": "Niet belangrijk"}
-        }
-      };
+        survey.i18n.nl.question = question_nl;
+        survey.i18n.nl.answer_formats =  {
+          "item": {
+            "yes": "Ja","no": "Nee","strongly_agree": "Helemaal akkoord",
+            "agree": "Eerder ja","no_opinion": "Ik spreek mij niet uit","disagree": "Eerder nee",
+            "strongly_disagree": "Helemaal niet akkoord"
+          },
+          "tolerance": {
+            "item": {"very_important": "Zeer belangrijk","important": "Belangrijk","not_important": "Niet belangrijk"}
+          }
+        };
 
-      survey.i18n.en.question = question_en;
-      survey.i18n.en.answer_formats = {
-        "item": {
-          "yes": "Yes","no": "No","strongly_agree": "Fully agree","agree": "Rather yes",
-          "no_opinion": "No opinion","disagree": "Rather no","strongly_disagree": "Strongly disagree"
-        },
-        "tolerance": {
-          "item": {"very_important": "Very important","important": "Important","not_important": "Not important"}
-        }
-      };
+        survey.i18n.en.question = question_en;
+        survey.i18n.en.answer_formats = {
+          "item": {
+            "yes": "Yes","no": "No","strongly_agree": "Fully agree","agree": "Rather yes",
+            "no_opinion": "No opinion","disagree": "Rather no","strongly_disagree": "Strongly disagree"
+          },
+          "tolerance": {
+            "item": {"very_important": "Very important","important": "Important","not_important": "Not important"}
+          }
+        };
 
-      survey.answer_formats = JSON.parse(fs.readFileSync('public/v1/ref/answer_formats.json', 'utf8'));
+        survey.answer_formats = JSON.parse(fs.readFileSync('public/v1/ref/answer_formats.json', 'utf8'));
 
-      res.json(survey);
+        res.json(survey);
 
-    })
+      })
   });
 });
 
@@ -695,11 +742,9 @@ router.all('/v1/stats', function (req, res) {
 
       if (err) throw err;
 
-      let data = [
-        rows[0].id,
-        req.query.answers,
-        formatted_date
-      ];
+      res.json({
+        'data':rows
+      });
 
         // for a specific usage
         /*
@@ -753,7 +798,7 @@ router.get('/v1/answers/:key', function (req, res) {
  * Just to check if the server response to a ping :-)
  */
 router.get('/ping', function (req, res) {
-  res.send('pong');
+  res.send('pong [v20190517.1]');
 });
 
 module.exports = router;
