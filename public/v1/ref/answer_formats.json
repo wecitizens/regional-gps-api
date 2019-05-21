@@ -17,31 +17,31 @@
 {
 "key": "agr_5_scale_tol_3_scale_abs",
 "items": [
-{
-"key": "strongly_agree",
-"name": "answer_format.item.strongly_agree",
-"weight": 100
-},
-{
-"key": "agree",
-"name": "answer_format.item.agree",
-"weight": 75
-},
-{
-"key": "no_opinion",
-"name": "answer_format.item.no_opinion",
-"weight": 50
-},
-{
-"key": "disagree",
-"name": "answer_format.item.disagree",
-"weight": 25
-},
-{
-"key": "strongly_disagree",
-"name": "answer_format.item.strongly_disagree",
-"weight": 0
-}
+  {
+    "key": "strongly_disagree",
+    "name": "answer_format.item.strongly_disagree",
+    "weight": 0
+  },
+  {
+    "key": "disagree",
+    "name": "answer_format.item.disagree",
+    "weight": 25
+  },
+  {
+    "key": "no_opinion",
+    "name": "answer_format.item.no_opinion",
+    "weight": 50
+  },
+  {
+    "key": "agree",
+    "name": "answer_format.item.agree",
+    "weight": 75
+  },
+  {
+    "key": "strongly_agree",
+    "name": "answer_format.item.strongly_agree",
+    "weight": 100
+  }
 ],
 "tolerance": {
 "items": [
