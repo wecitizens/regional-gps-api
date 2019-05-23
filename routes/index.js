@@ -129,10 +129,12 @@ router.get('/v1/gps/survey/:key.json', function (req, res) {
                 console.log('   election ' + electionId);
                 currQuestion = aQuestion.id;
                 currElection = electionId;
-              console.log(electionTp);
+                console.log(electionTp);
                 electQuestions[electionTp].push( aQuestion.id);
 
-                survey.question_order.push(questionKey);
+                if(survey.question_order.indexOf(questionKey) === -1){
+                  survey.question_order.push(questionKey);
+                }
                 questionSummary.push({
                     "key": questionKey,
                     "text": 'question.' + aQuestion.id + "_text",
