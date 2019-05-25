@@ -705,7 +705,6 @@ router.get("/v1/vote/electoral-districts.json", function (req, res) {
 });
 
 
-
 /**
  * Stats push stats into stats DB (/!\ different from POLDIR DB)
  *
@@ -744,32 +743,36 @@ router.all('/v1/stats', function (req, res) {
 
       if (err) throw err;
 
-      res.json({
-        'data': rows
-      });
+      let answersParams = [null,
+        rows.insertId,
+        JSON.stringify(req.query.answers),
+        formatted_date,
+        formatted_date
+      ];
+      //console.log('answersParams:', answersParams);
 
+      db.query("INSERT INTO answers (id,stats_id, answers, created, updated) VALUES (?,?,?,?,?)", answersParams, (err, answRows) => {
 
-        // for a specific usage
-        /*
-        db.query("INSERT INTO answers (stats_id, answers, created) VALUES (?,?,?)", data, (err, rows) => {
-          res.json({
-            'data': rows
-          });
+        if (err) throw err;
+        //console.log('stats:', rows);console.log('answRows:', answRows);
+
+        res.json({
+          'data': rows
         });
-        */
-
       });
-    });
+
+
+     });
   });
+});
 
 
 
 
   /**
-   * Stats push stats into stats DB (/!\ different from POLDIR DB)
+   * Stats get answers from stats DB (/!\ different from POLDIR DB)
    *
    *
-   * @todo JM PUT the correct answers format
    * @tag municipal, regional
    */
 router.get('/v1/answers/:key', function (req, res) {
@@ -801,7 +804,7 @@ router.get('/v1/answers/:key', function (req, res) {
  * Just to check if the server response to a ping :-)
  */
 router.get('/ping', function (req, res) {
-  res.send('1.1.2');
+  res.send('1.1.4');
 });
 
 module.exports = router;
